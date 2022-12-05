@@ -6,13 +6,14 @@ Spycoprobe should work with all MSP430X devices. It has been tested with MSP430F
 
 ## Configuring the firmware
 
+You should replace the dummy USB vendor ID and product ID in `src/usb_descriptors.c` before using Spycoprobe.
+
 You can change the pins that are used for SBW programming on top of `src/main.c`. There are four relevant pins:
  - `PIN_SBW_TCK` is the SBW clock signal
  - `PIN_SBW_TDIO` is the SBW data signal
  - `PIN_SBW_DIR` is an **optional** signal specifying the direction of the `SBW_TDIO` signal. This can be used to switch directions of a level converter. Signal is high when data is sent from the probe to the target.
  - `PIN_TARGET_POWER` is an **optional** signal to enable/disable a power supply to the target. Signal is high when programmer is active.
 
-You should replace the dummy USB vendor ID and product ID in `src/usb_descriptors.c` before using Spycoprobe.
 
 ## Building the firmware
 
@@ -42,7 +43,23 @@ Alternatively, you can use any suitable SWD debug probe to upload the hex file t
 
 ## Usage
 
-WIP
+Attach the Spycoprobe USB connector to your PC. Connect the `SBWTCK` and `SBWTDIO` pins of Spycoprobe (GP2 and GP3 by default) and a ground wire to your target device. Make sure that the target is supplied with a similar supply voltage as the Spycoprobe (3.3V on Raspberry Pico).
+
+Install the Python package provided under `./tools` using:
+
+```
+cd tool
+python setup.py install
+```
+
+Flash an image:
+
+```
+spycoprobe flash -i image.hex
+```
+
+It is planned to add support for Spycoprobe in Mspdebug, but that is still work in progress.
+
 
 ## References
 
