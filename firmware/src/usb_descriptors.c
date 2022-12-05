@@ -25,8 +25,8 @@
 
 #include "tusb.h"
 
-#define USB_VID 0xFEFE
-#define USB_PID 0x0B
+#define USB_VID 0x0001
+#define USB_PID 0xFFFF
 
 /* Device revision number*/
 #define USB_BCD 0x0200

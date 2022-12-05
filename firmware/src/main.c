@@ -67,7 +67,7 @@ void cmd_thread(void *ptr) {
   cdc_cmd_t cmd;
   cdc_rsp_t response = {.marker = PKT_MARKER};
   sbw_pins_t pins = {
-      .sbwtck = PIN_SBW_TCK, .sbwtdio = PIN_SBW_TDIO, .sbwdir = PIN_SBW_DIR};
+      .sbw_tck = PIN_SBW_TCK, .sbw_tdio = PIN_SBW_TDIO, .sbw_dir = PIN_SBW_DIR};
   sbw_dev_setup(&pins);
 
   do {
