@@ -1,5 +1,7 @@
-#ifndef __HAL_H_
-#define __HAL_H_
+#ifndef __SBW_HAL_GLUE_H_
+#define __SBW_HAL_GLUE_H_
+
+/* These definitions glue the platform's HAL function to the SBW code */
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -49,4 +51,4 @@ static inline void hal_delay_ms(unsigned int time_ms) { sleep_ms(time_ms); }
 #define HAL_ENTER_CRITICAL taskENTER_CRITICAL
 #define HAL_EXIT_CRITICAL taskEXIT_CRITICAL
 
-#endif /* __HAL_H_ */
+#endif /* __SBW_HAL_GLUE_H_ */

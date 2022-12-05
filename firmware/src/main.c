@@ -43,12 +43,12 @@ void tud_cdc_rx_cb(uint8_t itf) {
   cmd = (cdc_cmd_t *)rx_buf;
 
   if (cmd->marker != PKT_MARKER) {
-    printf("wrong marker!");
+    puts("CDC callback: wrong marker!");
     return;
   }
 
   if (count != sizeof(cdc_cmd_t)) {
-    printf("wrong length!");
+    puts("CDC callback: wrong length!");
     return;
   }
 
@@ -67,7 +67,6 @@ void cmd_thread(void *ptr) {
   do {
     /* Fetch command from queue */
     xQueueReceive(cmd_queue, &cmd, portMAX_DELAY);
-    // printf("<%u, %04X, %04X>", cmd.cmd_type, cmd.address, cmd.data);
 
     switch (cmd.cmd_type) {
     case CMD_START:
@@ -92,13 +91,11 @@ void cmd_thread(void *ptr) {
       rc = RC_ERR_UNKNOWN_CMD;
     }
 
-    if (rc != 0) {
+    if (rc != SBW_ERR_NONE) {
       response.rc = RC_ERR_GENERIC;
     } else {
       response.rc = RC_OK;
     }
-
-    // printf("<%u, %04X>", response.rc, response.data);
 
     /* Send the response packet */
     tud_cdc_n_write(0, &response, sizeof(cdc_rsp_t));
@@ -111,9 +108,6 @@ int main() {
   board_init();
 
   tusb_init();
-
-  gpio_init(15);
-  gpio_set_dir(15, GPIO_OUT);
 
   cmd_queue = xQueueCreate(128, sizeof(cdc_cmd_t));
 

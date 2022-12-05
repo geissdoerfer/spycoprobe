@@ -39,8 +39,11 @@ void set_sbwtdio(bool state);
 /* Wrapper for setting SBWTCK pin */
 void set_sbwtck(bool state);
 
+/* Initializes SBW pins */
 int sbw_transport_setup(sbw_pins_t *sbw_pins);
+/* Stops driving the SBW pins */
 int sbw_transport_stop(void);
+/* Starts driving the SBW pins */
 int sbw_transport_start(void);
 
 #endif /* __SBW_TRANSPORT_H_ */

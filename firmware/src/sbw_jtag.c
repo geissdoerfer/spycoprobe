@@ -47,13 +47,12 @@
 #define START_MAX_RETRY 5
 
 void tap_reset(void) {
-  // Now fuse is checked, Reset JTAG FSM
-  for (int i = 6; i > 0; i--) // 6 is nominal
-  {
+  /* Check fuse */
+  for (int i = 6; i > 0; i--) {
     tmsh_tdih();
   }
-  // JTAG FSM is now in Test-Logic-Reset
-  tmsl_tdih(); // now in Run/Test Idle
+  /* JTAG FSM is now in Test-Logic-Reset, move to Run/Test Idle */
+  tmsl_tdih();
 }
 
 /**
@@ -62,48 +61,48 @@ void tap_reset(void) {
  * Assumes that the TAP controller is in Shift-DR or Shift-IR state and,
  * bit by bit, shifts data into and out of the register.
  *
- * @param Format specifies length of the transfer
- * @param Data data to be shifted into the register
+ * @param format specifies length of the transfer
+ * @param data data to be shifted into the register
  *
  * @returns data shifted out of the register
  *
  */
-static uint32_t tap_shift(uint16_t Format, uint32_t Data) {
-  uint32_t TDOword = 0x00000000;
-  uint32_t MSB = 0x00000000;
+static uint32_t tap_shift(uint16_t format, uint32_t data) {
+  uint32_t tdo_word = 0x00000000;
+  uint32_t msb = 0x00000000;
   uint32_t i;
 
   bool tdo;
 
-  switch (Format) {
+  switch (format) {
   case F_BYTE:
-    MSB = 0x00000080;
+    msb = 0x00000080;
     break;
   case F_WORD:
-    MSB = 0x00008000;
+    msb = 0x00008000;
     break;
   case F_ADDR:
-    MSB = 0x00080000;
+    msb = 0x00080000;
     break;
   case F_LONG:
-    MSB = 0x80000000;
+    msb = 0x80000000;
     break;
   default: // this is an unsupported format, function will just return 0
-    return TDOword;
+    return tdo_word;
   }
   // shift in bits
-  for (i = Format; i > 0; i--) {
+  for (i = format; i > 0; i--) {
     if (i == 1) // last bit requires TMS=1; TDO one bit before TDI
     {
-      tdo = ((Data & MSB) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
+      tdo = ((data & msb) == 0) ? tmsh_tdil_tdo_rd() : tmsh_tdih_tdo_rd();
     } else {
-      tdo = ((Data & MSB) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd();
+      tdo = ((data & msb) == 0) ? tmsl_tdil_tdo_rd() : tmsl_tdih_tdo_rd();
     }
-    Data <<= 1;
+    data <<= 1;
     if (tdo)
-      TDOword++;
+      tdo_word++;
     if (i > 1)
-      TDOword <<= 1; // TDO could be any port pin
+      tdo_word <<= 1; // TDO could be any port pin
   }
   tmsh_tdih(); // update IR
   if (get_tclk()) {
@@ -113,15 +112,14 @@ static uint32_t tap_shift(uint16_t Format, uint32_t Data) {
   }
 
   // de-scramble bits on a 20bit shift
-  if (Format == F_ADDR) {
-    TDOword = ((TDOword << 16) + (TDOword >> 4)) & 0x000FFFFF;
+  if (format == F_ADDR) {
+    tdo_word = ((tdo_word << 16) + (tdo_word >> 4)) & 0x000FFFFF;
   }
 
-  return (TDOword);
+  return tdo_word;
 }
 
 uint32_t tap_ir_shift(uint8_t instruction) {
-
   // JTAG FSM state = Run-Test/Idle
   if (get_tclk()) {
     tmsh_tdih();
@@ -136,13 +134,11 @@ uint32_t tap_ir_shift(uint8_t instruction) {
   // JTAG FSM state = Capture-IR
   tmsl_tdih();
   // JTAG FSM state = Shift-IR, Shift in TDI (8-bit)
-  uint32_t res = tap_shift(F_BYTE, instruction);
+  return (tap_shift(F_BYTE, instruction));
   // JTAG FSM state = Run-Test/Idle
-  return res;
 }
 
 uint16_t tap_dr_shift16(uint16_t data) {
-
   // JTAG FSM state = Run-Test/Idle
   if (get_tclk()) {
     tmsh_tdih();
@@ -155,13 +151,11 @@ uint16_t tap_dr_shift16(uint16_t data) {
   tmsl_tdih();
 
   // JTAG FSM state = Shift-DR, Shift in TDI (16-bit)
-  uint32_t res = tap_shift(F_WORD, data);
+  return (tap_shift(F_WORD, data));
   // JTAG FSM state = Run-Test/Idle
-  return res;
 }
 
 uint32_t tap_dr_shift20(uint32_t address) {
-
   // JTAG FSM state = Run-Test/Idle
   if (get_tclk()) {
     tmsh_tdih();
@@ -174,9 +168,8 @@ uint32_t tap_dr_shift20(uint32_t address) {
   tmsl_tdih();
 
   // JTAG FSM state = Shift-DR, Shift in TDI (16-bit)
-  uint32_t res = tap_shift(F_ADDR, address);
+  return (tap_shift(F_ADDR, address));
   // JTAG FSM state = Run-Test/Idle
-  return res;
 }
 
 int sbw_jtag_write_jmb_in16(uint16_t data) {
@@ -190,16 +183,21 @@ int sbw_jtag_write_jmb_in16(uint16_t data) {
   do {
     Timeout++;
     if (Timeout >= 3000) {
-      return SC_ERR_GENERIC;
+      return SBW_ERR_GENERIC;
     }
   } while (!(tap_dr_shift16(0x0000) & IN0RDY) && Timeout < 3000);
   if (Timeout < 3000) {
     tap_dr_shift16(sJMBINCTL);
     tap_dr_shift16(sJMBIN0);
   }
-  return SC_ERR_NONE;
+  return SBW_ERR_NONE;
 }
 
+/**
+ * Enables JTAG access over SBW
+ *
+ * @see SLAU320AJ 2.3.1.1
+ */
 static int sbw_entry_sequence() {
   set_sbwtck(0);
   hal_delay_us(800); // delay min 800us - clr SBW controller
@@ -223,15 +221,9 @@ static int sbw_entry_sequence() {
   set_sbwtck(1);
   hal_delay_us(5);
 
-  return 0;
+  return SBW_ERR_NONE;
 }
 
-/**
- * Resync the JTAG connection
- *
- * @returns SC_ERR_NONE if operation was successful, SC_ERR_GENERIC otherwise
- *
- */
 int sbw_jtag_sync(void) {
   int i = 0;
 
@@ -240,8 +232,7 @@ int sbw_jtag_sync(void) {
   if ((tap_ir_shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID91) &&
       (tap_ir_shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID99) &&
       (tap_ir_shift(IR_CNTRL_SIG_CAPTURE) != JTAG_ID98)) {
-
-    return (SC_ERR_GENERIC);
+    return SBW_ERR_GENERIC;
   }
   // wait for sync
   while (!(tap_dr_shift16(0) & 0x0200) && i < 50) {
@@ -251,9 +242,9 @@ int sbw_jtag_sync(void) {
 
   // continues if sync was successful
   if (i >= 50) {
-    return (SC_ERR_GENERIC);
+    return SBW_ERR_GENERIC;
   }
-  return (SC_ERR_NONE);
+  return SBW_ERR_NONE;
 }
 
 int sbw_jtag_start(void) {
@@ -268,17 +259,17 @@ int sbw_jtag_start(void) {
     uint16_t jtag_id = (uint16_t)tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
     if ((jtag_id == JTAG_ID91) || (jtag_id == JTAG_ID99) ||
         (jtag_id == JTAG_ID98))
-      return 0;
+      return SBW_ERR_NONE;
     hal_delay_us(500);
     sbw_transport_stop();
   } while (--retries > 0);
-  return -1;
+  return SBW_ERR_GENERIC;
 }
 
 int sbw_jtag_stop(void) {
-  sbw_transport_stop();
+  int rc = sbw_transport_stop();
   hal_delay_ms(15);
-  return 0;
+  return rc;
 }
 
 int sbw_jtag_setup(sbw_pins_t *sbw_pins) {

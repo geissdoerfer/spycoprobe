@@ -23,45 +23,45 @@ if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
   message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
-project(pico-sbw C CXX ASM)
+project(spycoprobe C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pico-sbw src/main.c src/usb_descriptors.c src/sbw_transport.c src/sbw_jtag.c src/sbw_device.c)
+add_executable(spycoprobe src/main.c src/usb_descriptors.c src/sbw_transport.c src/sbw_jtag.c src/sbw_device.c)
 
     
-pico_set_program_name(pico-sbw "pico-sbw")
-pico_set_program_version(pico-sbw "0.1")
+pico_set_program_name(spycoprobe "spycoprobe")
+pico_set_program_version(spycoprobe "0.1")
 
-pico_enable_stdio_uart(pico-sbw 1)
-pico_enable_stdio_usb(pico-sbw 0)
+pico_enable_stdio_uart(spycoprobe 1)
+pico_enable_stdio_usb(spycoprobe 0)
 
 # Add the standard library to the build
-target_link_libraries(pico-sbw
+target_link_libraries(spycoprobe
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(pico-sbw PRIVATE
+target_include_directories(spycoprobe PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
   include/
 )
 
 # Add any user requested libraries
-target_link_libraries(pico-sbw
+target_link_libraries(spycoprobe
   FreeRTOS-Kernel
   FreeRTOS-Kernel-Heap1
   tinyusb_device
   tinyusb_board
 )
 
-target_compile_definitions (pico-sbw PRIVATE
+target_compile_definitions (spycoprobe PRIVATE
 	PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1
   PICO_DEFAULT_UART_BAUD_RATE=1000000
 )
 
-pico_add_extra_outputs(pico-sbw)
+pico_add_extra_outputs(spycoprobe)
 
