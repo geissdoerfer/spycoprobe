@@ -4,9 +4,10 @@
 #include <stdbool.h>
 
 typedef struct {
-  int sbwtck;
-  int sbwtdio;
-  int sbwdir;
+  int sbw_tck;
+  int sbw_tdio;
+  int sbw_dir;
+  int target_power;
 } sbw_pins_t;
 
 /* TMS low, TDI low */

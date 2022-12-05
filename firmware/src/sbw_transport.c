@@ -46,75 +46,86 @@ static unsigned int clk_delay_us;
 static sbw_pins_t pins;
 
 static inline void tmsh(void) {
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
 static inline void tmsl(void) {
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
 static inline void tmsldh(void) {
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
 static inline void tdih(void) {
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
 static inline void tdil(void) {
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 }
 
 static inline bool tdo_rd(void) {
   bool res;
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_IN);
+
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_LOW);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_IN);
+
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  res = hal_gpio_get(pins.sbwtdio);
+  res = hal_gpio_get(pins.sbw_tdio);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
+
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_OUT);
+
   hal_delay_us(clk_delay_us);
   return res;
 }
 
 static inline void tdo_sbw(void) {
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_IN);
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_LOW);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_IN);
+
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_LOW);
   hal_delay_us(clk_delay_us);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
+
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_OUT);
+
   hal_delay_us(clk_delay_us);
 }
 
-void set_sbwtdio(bool state) { hal_gpio_set(pins.sbwtdio, state); }
+void set_sbwtdio(bool state) { hal_gpio_set(pins.sbw_tdio, state); }
 
-void set_sbwtck(bool state) { hal_gpio_set(pins.sbwtck, state); }
+void set_sbwtck(bool state) { hal_gpio_set(pins.sbw_tck, state); }
 
 void tmsl_tdil(void) {
   HAL_ENTER_CRITICAL();
@@ -199,7 +210,7 @@ void clr_tclk_sbw(void) {
     tmsl();
   }
 
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_LOW);
 
   tdil();
   tdo_sbw();
@@ -215,7 +226,7 @@ void set_tclk_sbw(void) {
   } else {
     tmsl();
   }
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
 
   tdih();
   tdo_sbw();
@@ -226,8 +237,11 @@ void set_tclk_sbw(void) {
 bool get_tclk(void) { return tclk_state; }
 
 int sbw_transport_stop(void) {
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_IN);
-  hal_gpio_dir(pins.sbwtck, GPIO_DIR_IN);
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_LOW);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_IN);
+  hal_gpio_dir(pins.sbw_tck, GPIO_DIR_IN);
+
+  hal_gpio_set(pins.target_power, GPIO_STATE_LOW);
 
   tclk_state = 0;
   return 0;
@@ -235,31 +249,42 @@ int sbw_transport_stop(void) {
 
 int sbw_transport_start(void) {
 
-  hal_gpio_init(pins.sbwtdio);
-  hal_gpio_init(pins.sbwtck);
+  hal_gpio_set(pins.target_power, GPIO_STATE_HIGH);
 
-  hal_gpio_dir(pins.sbwtdio, GPIO_DIR_OUT);
-  hal_gpio_set(pins.sbwtdio, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH);
+  hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_tdio, GPIO_STATE_HIGH);
 
-  hal_gpio_dir(pins.sbwtck, GPIO_DIR_OUT);
-  hal_gpio_set(pins.sbwtck, GPIO_STATE_HIGH);
+  hal_gpio_dir(pins.sbw_tck, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_tck, GPIO_STATE_HIGH);
 
   tclk_state = 0;
   return 0;
 }
 
 int sbw_transport_setup(sbw_pins_t *sbw_pins) {
-  pins.sbwtck = sbw_pins->sbwtck;
-  pins.sbwtdio = sbw_pins->sbwtdio;
-  pins.sbwdir = sbw_pins->sbwdir;
+  pins.sbw_tck = sbw_pins->sbw_tck;
+  pins.sbw_tdio = sbw_pins->sbw_tdio;
+  pins.sbw_dir = sbw_pins->sbw_dir;
+  pins.target_power = sbw_pins->target_power;
+
+  hal_gpio_init(pins.sbw_tdio);
+  hal_gpio_init(pins.sbw_tck);
+  hal_gpio_init(pins.sbw_dir);
+  hal_gpio_init(pins.target_power);
+
+  hal_gpio_dir(pins.target_power, GPIO_DIR_OUT);
+  hal_gpio_set(pins.target_power, GPIO_STATE_LOW);
+
+  hal_gpio_dir(pins.sbw_dir, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_dir, GPIO_STATE_LOW);
 
   /*
-   * Make sure that clock frequency is around
-   * 500k. This number is taken from TI's slaa754 reference implementation and
-   * works reliably where other values do not work. In SLAU320AJ
-   * section 2.2.3.1., the 'delay' is specified as 5 clock cycles at 18MHz, but
-   * this seems to not work reliably and contradicts the reference
-   * implementation.
+   * Make sure that clock frequency is around 500k. This number is taken from
+   * TI's slaa754 reference implementation and works reliably where other values
+   * do not work. In SLAU320AJ section 2.2.3.1., the 'delay' is specified as 5
+   * clock cycles at 18MHz, but this seems to not work reliably and contradicts
+   * the reference implementation.
    */
   clk_delay_us = 3;
 

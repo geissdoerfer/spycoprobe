@@ -11,6 +11,11 @@
 #include "protocol.h"
 #include "sbw_device.h"
 
+#define PIN_SBW_TCK 2
+#define PIN_SBW_TDIO 3
+#define PIN_SBW_DIR 4
+#define PIN_TARGET_POWER 5
+
 static TaskHandle_t led_taskhandle, usb_taskhandle, cmd_taskhandle;
 static QueueHandle_t cmd_queue;
 
@@ -61,7 +66,8 @@ void cmd_thread(void *ptr) {
   int rc;
   cdc_cmd_t cmd;
   cdc_rsp_t response = {.marker = PKT_MARKER};
-  sbw_pins_t pins = {.sbwtck = 2, .sbwtdio = 3, .sbwdir = 4};
+  sbw_pins_t pins = {
+      .sbwtck = PIN_SBW_TCK, .sbwtdio = PIN_SBW_TDIO, .sbwdir = PIN_SBW_DIR};
   sbw_dev_setup(&pins);
 
   do {
