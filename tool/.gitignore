@@ -1,0 +1,4 @@
+build/
+dist/
+spycoprobe.egg-info/
+.pytest_cache
