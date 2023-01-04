@@ -3,32 +3,30 @@
 
 #include <stdint.h>
 
-#define PKT_MARKER 0xAA
-
 enum {
-  CMD_START,
-  CMD_STOP,
-  CMD_HALT,
-  CMD_RELEASE,
-  CMD_WRITE,
-  CMD_READ,
+  SBW_REQ_START,
+  SBW_REQ_STOP,
+  SBW_REQ_HALT,
+  SBW_REQ_RELEASE,
+  SBW_REQ_WRITE,
+  SBW_REQ_READ,
 };
 
-enum { RC_OK, RC_ERR_GENERIC, RC_ERR_UNKNOWN_CMD };
+enum { SBW_RC_OK, SBW_RC_ERR_GENERIC, SBW_RC_ERR_UNKNOWN_REQ };
 
 /* Format of packets received from the host */
 typedef struct __attribute__((packed)) {
-  uint16_t data;
-  uint8_t cmd_type;
+  uint8_t req_type;
+  uint8_t len;
   uint32_t address;
-  uint8_t marker;
-} cdc_cmd_t;
+  uint16_t data[29];
+} sbw_req_t;
 
 /* Format of packets sent to the host */
 typedef struct __attribute__((packed)) {
-  uint16_t data;
   uint8_t rc;
-  uint8_t marker;
-} cdc_rsp_t;
+  uint8_t len;
+  uint16_t data[31];
+} sbw_rsp_t;
 
 #endif /* __PROTOCOL_H_ */

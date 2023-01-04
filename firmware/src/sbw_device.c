@@ -26,6 +26,80 @@ static bool is_lock_key_programmed(void) {
 }
 
 /**
+ * Reads one word from a given address in memory
+ *
+ * @param dst pointer to destination buffer
+ * @param addr address of data to be read
+ *
+ * @returns Data from device
+ */
+static int mem_read_word(uint16_t *dst, uint32_t addr) {
+
+  //  Check Init State at the beginning
+  tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
+  if (!(tap_dr_shift16(0) & 0x0301))
+    return SBW_ERR_GENERIC;
+
+  // Read Memory
+  clr_tclk_sbw();
+  /* enables setting of the complete JTAG control signal register with the
+   * next 16-bit JTAG data access.*/
+  tap_ir_shift(IR_CNTRL_SIG_16BIT);
+
+  tap_dr_shift16(0x0501); // Set uint16_t read
+
+  tap_ir_shift(IR_ADDR_16BIT);
+  tap_dr_shift20(addr); // Set address
+  tap_ir_shift(IR_DATA_TO_ADDR);
+  set_tclk_sbw();
+  clr_tclk_sbw();
+  *dst = tap_dr_shift16(0x0000); // Shift out 16 bits
+
+  set_tclk_sbw();
+  // one or more cycle, so CPU is driving correct MAB
+  clr_tclk_sbw();
+  set_tclk_sbw();
+  // Processor is now again in Init State
+
+  return SBW_ERR_NONE;
+}
+
+/**
+ * Writes one uint16_t at a given address
+ *
+ * @param addr address of data to be written
+ * @param data data to be written
+ */
+static int mem_write_word(uint32_t addr, uint16_t data) {
+  // Check Init State at the beginning
+  tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
+  if (!(tap_dr_shift16(0) & 0x0301))
+    return SBW_ERR_GENERIC;
+
+  clr_tclk_sbw();
+  tap_ir_shift(IR_CNTRL_SIG_16BIT);
+
+  tap_dr_shift16(0x0500);
+  tap_ir_shift(IR_ADDR_16BIT);
+  tap_dr_shift20(addr);
+
+  set_tclk_sbw();
+  // New style: Only apply data during clock high phase
+  tap_ir_shift(IR_DATA_TO_ADDR);
+  tap_dr_shift16(data); // Shift in 16 bits
+  clr_tclk_sbw();
+  tap_ir_shift(IR_CNTRL_SIG_16BIT);
+  tap_dr_shift16(0x0501);
+  set_tclk_sbw();
+  // one or more cycle, so CPU is driving correct MAB
+  clr_tclk_sbw();
+  set_tclk_sbw();
+  // Processor is now again in Init State
+
+  return SBW_ERR_NONE;
+}
+
+/**
  * Execute a Power-On Reset (POR) using JTAG CNTRL SIG register
  *
  * @returns SBW_ERR_NONE if target is in Full-Emulation-State afterwards,
@@ -78,16 +152,16 @@ static int execute_por(void) {
   // in the WDT_CNTRL register
   uint16_t id = tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
   if (id == JTAG_ID98) {
-    sbw_dev_mem_write(0x01CC, 0x5A80);
+    mem_write_word(0x01CC, 0x5A80);
   } else {
-    sbw_dev_mem_write(0x015C, 0x5A80);
+    mem_write_word(0x015C, 0x5A80);
   }
 
   // Initialize Test Memory with default values to ensure consistency
   // between PC value and MAB (MAB is +2 after sync)
   if (id == JTAG_ID91 || id == JTAG_ID99) {
-    sbw_dev_mem_write(0x06, 0x3FFF);
-    sbw_dev_mem_write(0x08, 0x3FFF);
+    mem_write_word(0x06, 0x3FFF);
+    mem_write_word(0x08, 0x3FFF);
   }
 
   // Check if device is in Full-Emulation-State again and return status
@@ -99,63 +173,21 @@ static int execute_por(void) {
   return SBW_ERR_GENERIC;
 }
 
-int sbw_dev_mem_read(uint16_t *dst, uint32_t addr) {
-
-  //  Check Init State at the beginning
-  tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
-  if (!(tap_dr_shift16(0) & 0x0301))
-    return SBW_ERR_GENERIC;
-
-  // Read Memory
-  clr_tclk_sbw();
-  /* enables setting of the complete JTAG control signal register with the
-   * next 16-bit JTAG data access.*/
-  tap_ir_shift(IR_CNTRL_SIG_16BIT);
-
-  tap_dr_shift16(0x0501); // Set uint16_t read
-
-  tap_ir_shift(IR_ADDR_16BIT);
-  tap_dr_shift20(addr); // Set address
-  tap_ir_shift(IR_DATA_TO_ADDR);
-  set_tclk_sbw();
-  clr_tclk_sbw();
-  *dst = tap_dr_shift16(0x0000); // Shift out 16 bits
-
-  set_tclk_sbw();
-  // one or more cycle, so CPU is driving correct MAB
-  clr_tclk_sbw();
-  set_tclk_sbw();
-  // Processor is now again in Init State
-
+int sbw_dev_mem_read(uint16_t *dst, uint32_t addr, size_t n_words) {
+  int rc;
+  for (unsigned int i = 0; i < n_words; i++) {
+    if ((rc = mem_read_word(dst + i, addr + 2 * i)) != SBW_ERR_NONE)
+      return rc;
+  }
   return SBW_ERR_NONE;
 }
 
-int sbw_dev_mem_write(uint32_t addr, uint16_t data) {
-  // Check Init State at the beginning
-  tap_ir_shift(IR_CNTRL_SIG_CAPTURE);
-  if (!(tap_dr_shift16(0) & 0x0301))
-    return SBW_ERR_GENERIC;
-
-  clr_tclk_sbw();
-  tap_ir_shift(IR_CNTRL_SIG_16BIT);
-
-  tap_dr_shift16(0x0500);
-  tap_ir_shift(IR_ADDR_16BIT);
-  tap_dr_shift20(addr);
-
-  set_tclk_sbw();
-  // New style: Only apply data during clock high phase
-  tap_ir_shift(IR_DATA_TO_ADDR);
-  tap_dr_shift16(data); // Shift in 16 bits
-  clr_tclk_sbw();
-  tap_ir_shift(IR_CNTRL_SIG_16BIT);
-  tap_dr_shift16(0x0501);
-  set_tclk_sbw();
-  // one or more cycle, so CPU is driving correct MAB
-  clr_tclk_sbw();
-  set_tclk_sbw();
-  // Processor is now again in Init State
-
+int sbw_dev_mem_write(uint32_t addr, uint16_t *data, size_t n_words) {
+  int rc;
+  for (unsigned int i = 0; i < n_words; i++) {
+    if ((rc = mem_write_word(addr + 2 * i, data[i])) != SBW_ERR_NONE)
+      return rc;
+  }
   return SBW_ERR_NONE;
 }
 

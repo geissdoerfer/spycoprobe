@@ -1,17 +1,15 @@
 from enum import IntEnum
 
-MARKER = 0xAA
 
-
-class CmdType(IntEnum):
-    CMD_START = 0
-    CMD_STOP = 1
-    CMD_HALT = 2
-    CMD_RELEASE = 3
-    CMD_WRITE = 4
-    CMD_READ = 5
+class ReqType(IntEnum):
+    SBW_REQ_START = 0
+    SBW_REQ_STOP = 1
+    SBW_REQ_HALT = 2
+    SBW_REQ_RELEASE = 3
+    SBW_REQ_WRITE = 4
+    SBW_REQ_READ = 5
 
 
 class ReturnCode(IntEnum):
-    RC_OK = 0
-    RC_ERR_GENERIC = 1
+    SBW_RC_OK = 0
+    SBW_RC_ERR_GENERIC = 1

@@ -7,7 +7,7 @@ typedef struct {
   int sbw_tck;
   int sbw_tdio;
   int sbw_dir;
-  int target_power;
+  int sbw_enable;
 } sbw_pins_t;
 
 /* TMS low, TDI low */

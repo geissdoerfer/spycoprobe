@@ -241,7 +241,7 @@ int sbw_transport_stop(void) {
   hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_IN);
   hal_gpio_dir(pins.sbw_tck, GPIO_DIR_IN);
 
-  hal_gpio_set(pins.target_power, GPIO_STATE_LOW);
+  hal_gpio_set(pins.sbw_enable, GPIO_STATE_LOW);
 
   tclk_state = 0;
   return 0;
@@ -249,7 +249,7 @@ int sbw_transport_stop(void) {
 
 int sbw_transport_start(void) {
 
-  hal_gpio_set(pins.target_power, GPIO_STATE_HIGH);
+  hal_gpio_set(pins.sbw_enable, GPIO_STATE_HIGH);
 
   hal_gpio_set(pins.sbw_dir, GPIO_STATE_HIGH);
   hal_gpio_dir(pins.sbw_tdio, GPIO_DIR_OUT);
@@ -266,15 +266,15 @@ int sbw_transport_setup(sbw_pins_t *sbw_pins) {
   pins.sbw_tck = sbw_pins->sbw_tck;
   pins.sbw_tdio = sbw_pins->sbw_tdio;
   pins.sbw_dir = sbw_pins->sbw_dir;
-  pins.target_power = sbw_pins->target_power;
+  pins.sbw_enable = sbw_pins->sbw_enable;
 
   hal_gpio_init(pins.sbw_tdio);
   hal_gpio_init(pins.sbw_tck);
   hal_gpio_init(pins.sbw_dir);
-  hal_gpio_init(pins.target_power);
+  hal_gpio_init(pins.sbw_enable);
 
-  hal_gpio_dir(pins.target_power, GPIO_DIR_OUT);
-  hal_gpio_set(pins.target_power, GPIO_STATE_LOW);
+  hal_gpio_dir(pins.sbw_enable, GPIO_DIR_OUT);
+  hal_gpio_set(pins.sbw_enable, GPIO_STATE_LOW);
 
   hal_gpio_dir(pins.sbw_dir, GPIO_DIR_OUT);
   hal_gpio_set(pins.sbw_dir, GPIO_STATE_LOW);

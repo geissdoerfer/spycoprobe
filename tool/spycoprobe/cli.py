@@ -51,6 +51,15 @@ def flash(ctx, image, verify):
             if verify:
                 rb = probe.read_mem(addr)
                 if rb != value:
-                    raise click.ClickException(f"Verification failed at 0x{addr:08X}")
+                    raise click.ClickException(f"Verification failed at 0x{addr:08X}: {rb} != {value}")
         probe.release()
+        probe.stop()
+
+
+@cli.command(short_help="Halt target")
+@click.pass_context
+def halt(ctx):
+    with SpycoProbe(ctx.obj["device"]) as probe:
+        probe.start()
+        probe.halt()
         probe.stop()

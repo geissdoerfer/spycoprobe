@@ -37,22 +37,25 @@ int sbw_dev_get_coreip_id(uint16_t *coreip_id);
 int sbw_dev_get_device_id(uint16_t *device_id_ptr);
 
 /**
- * Reads one word from a given address in memory
+ * Reads data from a given address in memory
  *
  * @param dst pointer to destination buffer
  * @param addr address of data to be read
+ * @param n_words number of 16-bit words to be read
  *
  * @returns Data from device
  */
-int sbw_dev_mem_read(uint16_t *dst, uint32_t addr);
+int sbw_dev_mem_read(uint16_t *dst, uint32_t addr, size_t n_words);
 
 /**
- * Writes one uint16_t at a given address
+ * Writes data to a given address
  *
  * @param addr address of data to be written
- * @param data data to be written
+ * @param data pointer to source buffer
+ * @param n_words number of 16-bit words to be written
+ *
  */
-int sbw_dev_mem_write(uint32_t addr, uint16_t data);
+int sbw_dev_mem_write(uint32_t addr, uint16_t *data, size_t n_words);
 
 /**
  * Brings CPU to halt

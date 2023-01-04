@@ -1,10 +1,10 @@
 import serial
 import numpy as np
 import struct
+from typing import Union
 
-from spycoprobe.protocol import CmdType
+from spycoprobe.protocol import ReqType
 from spycoprobe.protocol import ReturnCode
-from spycoprobe.protocol import MARKER
 
 
 class SpycoProbe(object):
@@ -20,69 +20,58 @@ class SpycoProbe(object):
     def __exit__(self, *exc):
         self._ser.close()
 
-    def _send_cmd(self, cmd_type: CmdType, addr: int = 0x0, data: int = 0x0):
-        """Build a packet with defined format and send it over CDC ACM serial."""
-        pkt = struct.pack("=HBIB", data, int(cmd_type), addr, MARKER)
-        self._ser.write(pkt)
-
     def _recv_rsp(self):
         """Receive a packet from CDC ACM serial and decode it."""
-        rsp = self._ser.read(4)
-        if len(rsp) != 4:
-            raise Exception("No valid response received")
-        data, rc, marker = struct.unpack("=HBB", rsp)
-        if marker != 0xAA:
-            raise Exception("Wrong marker")
-        if rc != ReturnCode.RC_OK:
+        rsp = ""
+        while len(rsp) == 0:
+            rsp = self._ser.read_all()
+
+        rc = int(rsp[0])
+        if rc != ReturnCode.SBW_RC_OK:
             raise Exception(f"Probe replied with RC {rc}")
 
-        return data
+        if len(rsp) > 1:
+            # Extract length of payload
+            dlen = int(rsp[1])
+            # Extract payload
+            data = np.frombuffer(rsp[2:], dtype=np.uint16, count=(dlen // 2))
+            return data
 
     def start(self):
         """Puts device under JTAG control."""
-        self._send_cmd(CmdType.CMD_START)
+        pkt = struct.pack("=B", int(ReqType.SBW_REQ_START))
+        self._ser.write(pkt)
         self._recv_rsp()
 
     def stop(self):
         """Releases device from JTAG control."""
-        self._send_cmd(CmdType.CMD_STOP)
+        pkt = struct.pack("=B", int(ReqType.SBW_REQ_STOP))
+        self._ser.write(pkt)
         self._recv_rsp()
 
     def halt(self):
         """Halt CPU execution."""
-        self._send_cmd(CmdType.CMD_HALT)
+        pkt = struct.pack("=B", int(ReqType.SBW_REQ_HALT))
+        self._ser.write(pkt)
         self._recv_rsp()
 
     def release(self):
         """Continue CPU execution."""
-        self._send_cmd(CmdType.CMD_RELEASE)
+        pkt = struct.pack("=B", int(ReqType.SBW_REQ_RELEASE))
+        self._ser.write(pkt)
         self._recv_rsp()
 
-    def write_mem(self, addr, value: int):
+    def write_mem(self, addr, data: Union[int, np.ndarray]):
         """Write a word to NVM or RAM."""
-        self._send_cmd(CmdType.CMD_WRITE, addr, value)
+        if hasattr(data, "__len__"):
+            pkt = struct.pack(f"=BBI{len(data)}H", ReqType.SBW_REQ_WRITE, len(data), addr, data)
+        else:
+            pkt = struct.pack(f"=BBIH", ReqType.SBW_REQ_WRITE, 1, addr, data)
+        self._ser.write(pkt)
         self._recv_rsp()
 
-    def read_mem(self, addr):
+    def read_mem(self, addr, dlen: int = 1):
         """Read a word from NVM or RAM."""
-        self._send_cmd(CmdType.CMD_READ, addr)
+        pkt = struct.pack(f"=BBI", ReqType.SBW_REQ_READ, dlen, addr)
+        self._ser.write(pkt)
         return self._recv_rsp()
-
-    def write_mem_block(self, addr, values: np.array):
-        """Send commands consecutively and collect responses afterwards."""
-        for i, value in enumerate(values):
-            self._send_cmd(CmdType.CMD_WRITE, addr + i * 2, value)
-
-        for i in range(len(values)):
-            self._recv_rsp()
-
-    def read_mem_block(self, addr, n_words):
-        """Send commands consecutively and collect responses afterwards."""
-
-        for i in range(n_words):
-            self._send_cmd(CmdType.CMD_READ, addr + i * 2)
-
-        values = np.empty((n_words,), dtype=np.uint16)
-        for i in range(n_words):
-            values[i] = self._recv_rsp()
-        return values
